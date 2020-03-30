@@ -1,0 +1,16 @@
+#%RAML 1.0 SecurityScheme
+type: Basic Authentication    
+
+description: |
+  This API supports Basic Authentication
+
+describedBy:
+  headers:
+    Authorization:
+      description: |
+         Used to send valid basic auth credentials
+      type: string
+  responses:
+    401:
+      description: |
+          User is unauthorized to access

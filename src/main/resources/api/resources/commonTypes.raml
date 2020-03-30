@@ -1,0 +1,158 @@
+#%RAML 1.0 ResourceType
+usage: This is used to respresent the common the elements used by the resources
+
+uses:
+  dt: ../libraries/dataTypes.raml
+  
+post?:
+  responses: 
+    201:
+      description: Successful Response
+      body: 
+        application/json:
+          displayName: response
+          description: Response Object
+          example: <<example-1>>
+        application/csv:
+          displayName: response
+          description: CSV Response Object
+          example: <<example-2>>
+    400:
+      description: |
+        Bad Request.
+        Unspecified error due to the request being invalid. Do not retry.
+        Limit Exceeded.
+        The upper limit of allowed API calls has been reached. Do not retry.
+      body:
+        application/json:
+          description: |
+            Bad Request.
+            Unspecified error due to the request being invalid. Do not retry.
+            Limit Exceeded.
+            The upper limit of allowed API calls has been reached. Do not retry.
+          type: dt.Error
+    401:
+      description: >
+        Unauthorized.
+
+        Unable to validate specified credentials.
+      body:
+        application/json:
+          description: >
+            Unauthorized.
+
+            Unable to validate specified credentials.
+          type: dt.Error
+          
+        
+    403:
+      description: >
+        Forbidden.
+
+        The client is not authorized to use the given API. Do not retry.
+      body:
+        application/json:
+          description: >
+            Forbidden.
+
+            The client is not authorized to use the given API. Do not retry.
+          type: dt.Error
+          
+        
+    404:
+      description: |
+        Not Found.
+        There is no such API at the given request URL. Do not retry.
+      body:
+        application/json:
+          description: |
+            Not Found.
+            There is no such API at the given request URL. Do not retry.
+          type: dt.Error
+          
+        
+    405:
+      description: |
+        Method Not Allowed.
+        An invalid HTTP VERB was used
+      body:
+        application/json:
+          description: |
+            Method Not Allowed.
+            An invalid HTTP VERB was used
+          type: dt.Error
+          
+        
+    406:
+      description: |
+        Not Acceptable
+        An Accept header with an invalid value was received
+      body:
+        application/json:
+          description: |
+            Not Acceptable
+            An Accept header with an invalid value was received
+          type: dt.Error
+          
+        
+    415:
+      description: |
+        Unsupported Media Type
+        An unsupported media type was sent
+      body:
+        application/json:
+          description: |
+            Unsupported Media Type
+            An unsupported media type was sent
+          type: dt.Error
+          
+        
+    429:
+      description: |
+        Too Many Requests.
+        Too many requests to the API were received within a period of time. Retry.
+      body:
+        application/json:
+          description: |
+            Too Many Requests.
+            Too many requests to the API were received within a period of time. Retry.
+          type: dt.Error
+          
+        
+    500:
+      description: |
+        Internal Failure.
+        Unspecified error occurred on the server. Retry.
+      body:
+        application/json:
+          description: |
+            Internal Failure.
+            Unspecified error occurred on the server. Retry.
+          type: dt.Error
+          
+        
+    502:
+      description: >
+        Bad Gateway.
+
+        Invalid response received from upstream server. Retry.
+      body:
+        application/json:
+          description: >
+            Bad Gateway.
+
+            Invalid response received from upstream server. Retry.
+          type: dt.Error
+          
+        
+    503:
+      description: |
+        Service Unavailable.
+        The API is currently unavailable. Retry.
+      body:
+        application/json:
+          description: |
+            Service Unavailable.
+            The API is currently unavailable. Retry.
+          type: dt.Error
+          

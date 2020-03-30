@@ -1,0 +1,42 @@
+#%RAML 1.0
+title: rtf-core-calculator-api
+version: v1
+
+# Array of all protocols that your API supports
+protocols: [ HTTPS ]
+
+baseUri: https://localhost:8081/api/{apiVersion}/rtf-core-calculator-api
+
+mediaType: [ application/json ]
+
+
+
+uses:
+  trait: libraries/traits.raml
+  dt: libraries/dataTypes.raml
+  rt: resources/resourceTypesLibrary.raml
+  
+securitySchemes:
+  basic: !include security/basic-auth-security-scheme.raml
+
+/calculate:
+
+    type:
+      rt.common:
+        example-1: !include examples/jsonResponse.json
+        example-2: !include examples/csvResponse.csv
+    
+    post:
+      securedBy: [ basic ]
+      description: | 
+        This resource calculates the RTF Cores used by your by your organizations and provides a total count and count per business group per environment
+      is:  [trait.tracked,trait.required-headers] 
+      body:
+        application/json:
+          description: Input Data for calculating RTF Cores count
+          type: dt.inputObject
+              
+
+        
+
+  

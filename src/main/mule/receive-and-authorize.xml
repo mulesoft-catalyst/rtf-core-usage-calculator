@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting"
+	xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
+http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<sub-flow name="receive-and-authorize" doc:id="d54dd491-8334-4d07-b5ab-9233b07797f8" >
+		<logger level="INFO" doc:name="Log is Auth Header Present" doc:id="366c72bc-2862-44f0-a453-a2c553c1a10e" message="Check for the presence of Auth Header"/>
+		<validation:is-true doc:name="Is Authorization Header Present?" doc:id="fafdf845-6968-4a2d-8046-406cf82167d6" expression='#[attributes.headers.Authorization != null and (attributes.headers.Authorization contains "Basic")]' message="Authorization Header Not Present. Call will not proceed">
+			<error-mapping sourceType="VALIDATION:INVALID_BOOLEAN" targetType="BAD:AUTHORIZATION" />
+		</validation:is-true>
+		<logger level="INFO" doc:name="Log Auth Header Present" doc:id="499e8bbe-9daf-4046-959e-f8eacbdb66b7" message="Auth Header is Present"/>
+		<ee:transform doc:name="Extract Username and Password" doc:id="1c8621c8-cf05-4b80-9b69-d6e3d0057512">
+			<ee:message>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="creds"><![CDATA[%dw 2.0
+import java!utils::Base64Decode
+output application/java
+var decodedToken = Base64Decode::decodedString((attributes.headers.Authorization splitBy(" "))[1])
+---
+{
+	username: (decodedToken splitBy(":"))[0],
+	password: (decodedToken splitBy(":"))[1]
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<choice doc:name="Choice" doc:id="c08aa5eb-9033-48be-a241-6076bc22b62d" >
+			<when expression='#[vars.inputData.authType == "userpass"]'>
+				<logger level="INFO" doc:name="Log Before Creating Auth Request" doc:id="342fc73c-f517-4f7d-b1e3-650cc6f31b5c" message="Start creating auth request" />
+				<ee:transform doc:name="Authorization Request" doc:id="4fc9dfaf-9f67-4099-8a4f-82d217892b6f">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	username: vars.creds.username,
+	password: vars.creds.password
+}
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+				<logger level="INFO" doc:name="Log After Creating Auth Request" doc:id="0cc3bf31-57c6-46f9-b9b1-0d9895565bfb" message="Auth Request Created" />
+				<logger level="INFO" doc:name="Log Before Get Token" doc:id="3673830c-0dbf-437b-ab9d-d372c034be35" message="Before Extracting Token" />
+				<http:request method="POST" doc:name="Generate Bearer Token" doc:id="b83a2d66-7177-4d37-ac8f-349986927c9e" config-ref="HTTP_Request_configuration" path="/accounts/login" target="tokenValue">
+			<http:headers><![CDATA[#[output application/java
+---
+{
+	"Content-Type" : "application/json"
+}]]]></http:headers>
+		</http:request>
+				<logger level="INFO" doc:name="Log After Get Token" doc:id="1a2cf90b-e03f-4401-8753-e14eaaa0c0bc" message="Token Extracted" />
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="Log Before Creating Auth Request" doc:id="28b05932-8386-47ea-9494-c30294b0dbea" message="Start creating auth request" />
+				<ee:transform doc:name="Authorization Request" doc:id="34d39de7-a61a-4e50-8c77-ad47ec0265dc" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+write({
+
+"grant_type": "client_credentials",
+"client_secret": vars.creds.password,
+"client_id": vars.creds.username,
+"scope": "scope"
+
+}, 'application/x-www-form-urlencoded')]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<logger level="INFO" doc:name="Log After Creating Auth Request" doc:id="8f02f9f0-bb20-490f-81ae-7162ef8a75ee" message="Auth Request Created" />
+				<logger level="INFO" doc:name="Log Before Get Token" doc:id="910e0607-0936-40cb-922c-eaa1e1c5eabd" message="Before Extracting Token" />
+				<http:request method="POST" doc:name="Generate Bearer Token" doc:id="ec132cf8-e905-4239-b4f6-9effbb434846" config-ref="HTTP_Request_configuration" path="/accounts/api/v2/oauth2/token" target="tokenValue" >
+					<http:headers ><![CDATA[#[output application/java
+---
+{
+	"Content-Type" : "application/x-www-form-urlencoded"
+}]]]></http:headers>
+				</http:request>
+				<logger level="INFO" doc:name="Log After Get Token" doc:id="f3705e86-c440-41c1-8a25-c49e7be8935f" message="Token Extracted" />
+			</otherwise>
+		</choice>
+	</sub-flow>
+</mule>

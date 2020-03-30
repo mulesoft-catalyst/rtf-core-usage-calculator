@@ -1,0 +1,59 @@
+[
+  {
+    "Organization": "rahuldureja-services",
+    "Environments": [
+      {
+        "Environment": "DEV",
+        "Total CPU Used": 1,
+        "Total Memory Used": 3.6,
+        "Application Details": [
+          {
+            "applicationName": "rtf-test-dev",
+            "cpuUsed": 1,
+            "memUsed": 3.6
+          }
+        ]
+      },
+      {
+        "Environment": "STAGING",
+        "Total CPU Used": 0,
+        "Total Memory Used": 0,
+        "Application Details": []
+      },
+      {
+        "Environment": "Test",
+        "Total CPU Used": 0,
+        "Total Memory Used": 0,
+        "Application Details": []
+      },
+      {
+        "Environment": "TEST",
+        "Total CPU Used": 0,
+        "Total Memory Used": 0,
+        "Application Details": []
+      }
+    ]
+  },
+  {
+    "Organization": "deepak-services",
+    "Environments": [
+      {
+        "Environment": "Sandbox",
+        "Total CPU Used": 0,
+        "Total Memory Used": 0,
+        "Application Details": []
+      }
+    ]
+  },
+  {
+    "Organization": "Test2",
+    "Environments": [
+      {
+        "Environment": "Sandbox",
+        "Total CPU Used": 0,
+        "Total Memory Used": 0,
+        "Application Details": []
+      }
+    ]
+  }
+]

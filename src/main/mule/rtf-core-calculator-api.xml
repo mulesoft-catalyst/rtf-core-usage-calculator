@@ -1,0 +1,357 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
+http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd">
+	<flow name="rtf-core-calculator-api-main">
+        <http:listener config-ref="rtf-core-calculator-api-httpListenerConfig" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="rtf-core-calculator-api-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:BAD_REQUEST">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "errorDetails": {
+    "message": "Bad Request",
+    "shortDescription": error.description,
+    "description": error.detailedDescription,
+    "additionalInfo": error.exception.verboseMessage
+  },
+  "timestamp": now() as DateTime,
+  "apiName": "rtf-core-calculator-api-impl",
+  "success": false,
+  "correlationId": correlationId
+}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus"><![CDATA[400]]></ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+				<logger level="ERROR" doc:name="Log Error" doc:id="8d917b34-32bc-4a05-9402-accce8a12faa" message="#[payload]"/>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+				<ee:transform doc:name="Transform Message" doc:id="4083c414-d30f-4aff-8f88-91429a333633" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "errorDetails": {
+    "message": "Resource not found",
+    "shortDescription": error.description,
+    "description": error.detailedDescription,
+    "additionalInfo": error.exception.verboseMessage
+  },
+  "timestamp": now() as DateTime,
+  "apiName": "rtf-core-calculator-api-impl",
+  "success": false,
+  "correlationId": correlationId
+}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA[400]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<logger level="ERROR" doc:name="Log Error" doc:id="41f73da9-f141-4762-8820-bcf7d4540da6" message="#[payload]" />
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED">
+				<ee:transform doc:name="Transform Message" doc:id="b1a9cc88-5d5f-4377-be29-45e552a579ad" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "errorDetails": {
+    "message": "Method not allowed",
+    "shortDescription": error.description,
+    "description": error.detailedDescription,
+    "additionalInfo": error.exception.verboseMessage
+  },
+  "timestamp": now() as DateTime,
+  "apiName": "rtf-core-calculator-api-impl",
+  "success": false,
+  "correlationId": correlationId
+}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA[400]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<logger level="ERROR" doc:name="Log Error" doc:id="facf7c7a-0acc-4186-a714-b87125323344" message="#[payload]" />
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_ACCEPTABLE">
+				<ee:transform doc:name="Transform Message" doc:id="e2e46fa3-731c-49cd-bb36-abf5af26981d" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "errorDetails": {
+    "message": "Not acceptable",
+    "shortDescription": error.description,
+    "description": error.detailedDescription,
+    "additionalInfo": error.exception.verboseMessage
+  },
+  "timestamp": now() as DateTime,
+  "apiName": "rtf-core-calculator-api-impl",
+  "success": false,
+  "correlationId": correlationId
+}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA[400]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<logger level="ERROR" doc:name="Log Error" doc:id="a8721452-6205-4a6a-908e-1d772677d185" message="#[payload]" />
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+				<ee:transform doc:name="Transform Message" doc:id="9831e5e2-81fd-42aa-8715-2c150f5fdff0" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "errorDetails": {
+    "message": "Unsupported media type",
+    "shortDescription": error.description,
+    "description": error.detailedDescription,
+    "additionalInfo": error.exception.verboseMessage
+  },
+  "timestamp": now() as DateTime,
+  "apiName": "rtf-core-calculator-api-impl",
+  "success": false,
+  "correlationId": correlationId
+}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA[400]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<logger level="ERROR" doc:name="Log Error" doc:id="b289cd99-505c-4861-b722-d97942fff6e6" message="#[payload]" />
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_IMPLEMENTED">
+				<ee:transform doc:name="Transform Message" doc:id="b3faa0e2-4704-4fee-be03-47a19df32725" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "errorDetails": {
+    "message": "Not Implemented",
+    "shortDescription": error.description,
+    "description": error.detailedDescription,
+    "additionalInfo": error.exception.verboseMessage
+  },
+  "timestamp": now() as DateTime,
+  "apiName": "rtf-core-calculator-api-impl",
+  "success": false,
+  "correlationId": correlationId
+}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA[400]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<logger level="ERROR" doc:name="Log Error" doc:id="b8f1049a-c327-4d4b-82f8-af136ec11329" message="#[payload]" />
+            </on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="c8fadf9f-200f-46b9-9c1d-8a7daa5a1d2c" type="ANY">
+				<ee:transform doc:name="Transform Message" doc:id="d65c4dc4-1fe7-42bf-9d4e-e76371d01e15" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "errorDetails": {
+    "message": "Unknown Error",
+    "shortDescription": error.description,
+    "description": error.detailedDescription,
+    "additionalInfo": error.exception
+  },
+  "timestamp": now() as DateTime,
+  "apiName": "rtf-core-calculator-api-impl",
+  "success": false,
+  "correlationId": correlationId
+}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA[500]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<logger level="INFO" doc:name="Log Error" doc:id="163b0199-1e6a-4f52-86a3-e14b32e5820f" message='#[payload]' />
+			</on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="rtf-core-calculator-api-console">
+        <http:listener config-ref="rtf-core-calculator-api-httpListenerConfig" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="rtf-core-calculator-api-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="post:\calculate:application\json:rtf-core-calculator-api-config">
+		<logger level="INFO" doc:name="Log Start" doc:id="5699ab1c-f4d0-4224-8466-a0302a379985" message="Request Received"/>
+		<flow-ref doc:name="save-variables" doc:id="052cf597-d709-4ecd-8f57-3555b69bf934" name="save-variables" />
+		<flow-ref doc:name="receive-and-authorize-sub-flow" doc:id="f5311621-62dd-41cd-869b-beef253072e9" name="receive-and-authorize"/>
+		<ee:transform doc:name="Save Access Token" doc:id="f30a419f-49a0-4e0e-b1bc-cd61939d00f0">
+			<ee:message />
+			<ee:variables>
+				<ee:set-variable variableName="accessToken"><![CDATA[%dw 2.0
+output application/java
+---
+"Bearer " ++ vars.tokenValue.access_token]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="get-business-group-info" doc:id="ce215850-913c-4263-ae3c-f451a572e8aa" name="get-business-group-info" />
+		<logger level="INFO" doc:name="Log Start Processing Business Groups" doc:id="673e9711-c484-4ba6-a223-0a451986d2e2" />
+		<foreach doc:name="For Each Business Group" doc:id="b02ace3a-da45-444a-ad5e-7ab9dad3a802" collection="#[vars.retrievedOrgs.orgIds]">
+			<set-variable value="#[payload]" doc:name="Save Business Group ID" doc:id="6a221216-30d1-4954-9a54-47b26172b52a" variableName="bgId"/>
+			<logger level="INFO" doc:name="Log Start Processing Business Group" doc:id="131e769a-043f-4c5e-a0fc-9d92feb28c11" message='#["Processing Business Group: " ++ vars.bgId]'/>
+			<flow-ref doc:name="extract-environments-for-bg" doc:id="c164ba80-76ca-4f5a-9367-ec356c251cd9" name="extract-environments-for-bg" />
+			<foreach doc:name="For Each Environment" doc:id="bdee7570-39fe-4da9-9b0c-640ad262bfea" collection="#[vars.extractedEnvs]">
+				<set-variable value="#[payload]" doc:name="Set Environment Info" doc:id="4c8c61c8-c620-4fd1-9f60-66303f005d6e" variableName="envInfo"/>
+				<flow-ref doc:name="list-deployed-apis" doc:id="5a0788e7-c6c3-4fd4-a525-b4ed791dbe29" name="list-deployed-apis" />
+				<set-variable value="#[0]" doc:name="Init Total CPU Used" doc:id="e0d6f840-084c-4d05-8840-e01bfed38dbd" variableName="totalCPUUsed" mimeType="application/java"/>
+				<set-variable value="#[0]" doc:name="Init Total Memory Used" doc:id="75844b65-21e2-48b6-a842-c6f637368521" variableName="totalMemUsed" mimeType="application/java"/>
+				<foreach doc:name="For Each Extracted Application" doc:id="977d35bc-6e67-42e5-9ced-3937804ab461" collection="#[vars.filteredApps]" >
+					<set-variable value="#[payload]" doc:name="Current App" doc:id="2543df6f-a360-4646-a47c-94b973742363" variableName="currApp"/>
+					<flow-ref doc:name="list-details-for-deployment" doc:id="dd043498-44b4-4b4a-891c-17ead04d3b08" name="list-details-for-deployment" />
+					<set-variable value="#[(vars.totalCPUUsed as Number) + (vars.appDetail.cpuUsed as Number)]" doc:name="Count Total CPU" doc:id="4d796c8a-4a4c-4da7-8c90-671cab824f0a" variableName="totalCPUUsed"/>
+					<set-variable value="#[(vars.totalMemUsed as Number) + (vars.appDetail.memUsed as Number)]" doc:name="Count Total Memory" doc:id="4b991ba9-1445-47f7-87e6-065a05ee3395" variableName="totalMemUsed"/>
+					<scripting:execute engine="groovy" doc:name="Add to Count List" doc:id="1cdbf6fb-30ac-4de4-a168-3b848acf614f" >
+						<scripting:code >vars.countList.add(vars.appDetail)</scripting:code>
+					</scripting:execute>
+				</foreach>
+				<ee:transform doc:name="Aggregated Data" doc:id="902d18d7-7543-42bd-aef0-c5578011204a" >
+					<ee:message >
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="aggregatedDataEnv" ><![CDATA[%dw 2.0
+output application/java
+---
+
+	{
+		"Environment": vars.envInfo.envName,
+		"Total CPU Used": if (sizeOf(vars.filteredApps) > 0) vars.totalCPUUsed else 0,
+		"Total Memory Used": if (sizeOf(vars.filteredApps) > 0) vars.totalMemUsed else 0,
+		"Application Details": if (sizeOf(vars.filteredApps) > 0) vars.countList else []
+	
+	}
+]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<scripting:execute doc:name="Add to Environment List" doc:id="95401a13-9c2c-484f-ae6e-9c9d9c56c266" engine="groovy">
+					<scripting:code>vars.envList.add(vars.aggregatedDataEnv)</scripting:code>
+				</scripting:execute>
+			</foreach>
+			<http:request method="GET" doc:name="Get List of Existing Sub Orgs for the Root Org" doc:id="f3be5720-2c20-48ed-8a01-4ff204fdb39b" config-ref="HTTP_Request_configuration" path="/accounts/api/organizations/{rootOrgID}/hierarchy" target="bgName" targetValue="#[write(payload.name, 'application/java')]">
+				<http:headers><![CDATA[#[output application/java
+---
+{
+	"Authorization" : vars.accessToken
+}]]]></http:headers>
+				<http:uri-params><![CDATA[#[output application/java
+---
+{
+	"rootOrgID" : vars.bgId
+}]]]></http:uri-params>
+			</http:request>
+			<choice doc:name="Check Response Type" doc:id="23a784c6-1310-40e1-95e9-e9f3648a44db" >
+				<when expression='#[vars.inputData.responseType == "json"]'>
+					<scripting:execute doc:name="Add to Organization Map" doc:id="a42f47b1-5c8d-4bf9-96bd-792492d9bf75" engine="groovy">
+				<scripting:code>vars.orgMap.put(vars.bgName, vars.envList)</scripting:code>
+			</scripting:execute>
+				</when>
+				<otherwise >
+					<ee:transform doc:name="Aggregated Data" doc:id="3cea0e98-ae33-40bc-8a01-37fb0f6e3b1e" >
+						<ee:message >
+						</ee:message>
+						<ee:variables >
+							<ee:set-variable variableName="aggregatedOrgData" ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	"Organization": vars.bgName,
+	"Environments": vars.envList
+}]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<scripting:execute doc:name="Add to Organization List" doc:id="25526800-a3bd-44ef-90c9-6cec20cde4e9" engine="groovy">
+						<scripting:code >vars.orgList.add(vars.aggregatedOrgData)</scripting:code>
+					</scripting:execute>
+				</otherwise>
+			</choice>
+			<set-variable value="#[[]]" doc:name="Clear Count List" doc:id="0159ecb4-9f3c-4efe-b593-1bfc72a262b0" variableName="countList"/>
+			<set-variable value="#[[]]" doc:name="Clear Environment List" doc:id="501534fc-fddb-482a-adf7-c00ccf7c4e52" variableName="envList" />
+			<logger level="INFO" doc:name="Log End Processing Business Groups" doc:id="1a9df4a9-a371-4954-8592-c8a2dceb2981" message='#["Processed Business Group: " ++ vars.bgId]'/>
+		</foreach>
+		<choice doc:name="Check Response Type" doc:id="f7092d04-2eba-4fea-a095-1ec0d663ade3" >
+			<when expression='#[vars.inputData.responseType == "json"]'>
+				<ee:transform doc:name="Create JSON Response" doc:id="375df877-d337-4533-b69c-a97892a8503e">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+vars.orgMap]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Create Response" doc:id="87ceca57-83aa-4074-8951-470aa508e5c3" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+vars.orgList]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<ee:transform doc:name="Create CSV Response" doc:id="a29f400e-36e7-4129-bd18-397e41af490c" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/csv headerLineNumber = 0 , header = true
+---
+payload flatMap  ((payload01, indexOfPayload01) -> (
+    payload01.Environments map (payload02, indexOfPayload02) -> {
+        Organization: payload01.Organization,
+        Environment: payload02.Environment,
+        "Total CPU Used": payload02."Total CPU Used",
+        "Total Memory Used": payload02."Total Memory Used"
+    }
+))]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+		<logger level="INFO" doc:name="Log End" doc:id="bf64595e-a86e-4c31-a65a-099d47937b16" message="Request Completed"/>
+    </flow>
+</mule>

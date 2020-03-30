@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
+http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd">
+    
+    <sub-flow name="list-details-for-deployment" doc:id="dbd99a5a-1ec2-48de-938e-51d88f133b1b" >
+		<try doc:name="Try" doc:id="ec9058a6-9f31-4159-95fe-412bd0c83e0c">
+						<http:request method="GET" doc:name="Get Details for Each Deployment" doc:id="1a30c497-8558-423a-8976-5b11ae3b860c" config-ref="HTTP_Request_configuration" path="/hybrid/api/v2/organizations/{orgId}/environments/{envId}/deployments/{deploymentId}">
+							<http:headers><![CDATA[#[output application/java
+---
+{
+	Authorization : vars.accessToken
+}]]]></http:headers>
+							<http:uri-params><![CDATA[#[output application/java
+---
+{
+	deploymentId : vars.currApp.id,
+	envId : vars.envInfo.id,
+	orgId : vars.bgId
+}]]]></http:uri-params>
+						</http:request>
+						<error-handler>
+							<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="6bede1c0-22b4-45ef-a625-fe2462afe6de">
+								<logger level="ERROR" doc:name="Log Could Not Retrieve Detail for Current Application" doc:id="8bebdf51-51fb-4ba1-8940-82610c404574" message='#["Could not retrieve details for application: " ++ vars.currApp.name]' />
+							</on-error-continue>
+						</error-handler>
+					</try>
+		<ee:transform doc:name="Calculating CPU Usage" doc:id="4eb4341c-e992-4bfa-bf49-78a348c9a93c">
+							<ee:message />
+							<ee:variables>
+				<ee:set-variable variableName="appDetail" ><![CDATA[%dw 2.0
+output application/java
+---
+if (attributes.statusCode == 200) {
+	"applicationName": vars.currApp.name,
+    "cpuUsed": if (payload.application.status != "NOT_RUNNING") ((((payload.target.deploymentSettings.cpuReserved) replace "m" with "") as Number) * (payload.target.replicas as Number))/1000 else 0,
+    "memUsed": if (payload.application.status != "NOT_RUNNING") ((((payload.target.deploymentSettings.memoryReserved) replace "Mi" with "") as Number) * (payload.target.replicas as Number))/1000 else 0
+}
+else
+{
+	message: "Details not found"
+}]]></ee:set-variable>
+							</ee:variables>
+						</ee:transform>
+	</sub-flow>
+	<sub-flow name="list-deployed-apis" doc:id="a5b221e4-c647-49ad-a0d9-332e80efe8bb" >
+		<logger level="INFO" doc:name="Log Start Extracting Used Cores for RTF Applications" doc:id="99f8a255-c450-4d4a-988e-81583b375dd6" message='#["Before extracting deployed applications for environment ID: " ++ vars.envInfo.id ++ " with name: " ++ vars.envInfo.envName]' />
+		<http:request method="GET" doc:name="List Deployed APIs" doc:id="380bdc52-5b08-4cad-916f-b3c1acd2bb3a" config-ref="HTTP_Request_configuration" path="/hybrid/api/v2/organizations/{orgId}/environments/{envId}/deployments">
+					<http:headers><![CDATA[#[output application/java
+---
+{
+	Authorization : vars.accessToken
+}]]]></http:headers>
+					<http:uri-params><![CDATA[#[output application/java
+---
+{
+	envId : vars.envInfo.id,
+	orgId : vars.bgId
+}]]]></http:uri-params>
+				</http:request>
+		<ee:transform doc:name="Filter Applications for RTF" doc:id="d8ba26e1-ea06-4642-8f6f-098f949c1897">
+					<ee:message>
+					</ee:message>
+					<ee:variables>
+						<ee:set-variable variableName="filteredApps"><![CDATA[%dw 2.0
+output application/java
+---
+payload.items filter ($.target.provider == "MC") map {
+    id: $.id,
+    name: $.name
+}]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+		<logger level="INFO" doc:name="Log End Extracting Used Cores for RTF Applications" doc:id="aaff4a92-78f4-4166-9a9d-f324319f99a5" message='#["Extracted deployed applications for environment ID: " ++ vars.envInfo.id ++ " with name: " ++ vars.envInfo.envName]' />
+	</sub-flow>
+	<sub-flow name="save-variables" doc:id="091a406e-ea23-44d4-a1ce-eda2a7163f93" >
+		<ee:transform doc:name="Save Variables" doc:id="698e34c9-3163-42b2-8f35-96528ee4d80a">
+			<ee:message>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="inputData"><![CDATA[%dw 2.0
+output application/java
+---
+{
+	data: payload,
+	responseType: attributes.headers.responseType default "json",
+	authType: attributes.headers.authType
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<set-variable value="#[[]]" doc:name="Initialize Core Count List" doc:id="8fc8145d-3679-471c-b181-5d96d201ede7" variableName="countList"/>
+		<set-variable value="#[[]]" doc:name="Initialize Environment List" doc:id="891ce147-05e5-44f1-a60a-626680d2729f" variableName="envList" />
+		<scripting:execute doc:name="Initialize Organization HashMap" doc:id="bc34b576-feed-4229-92b0-ca7a57124791" engine="groovy" target="orgMap">
+			<scripting:code>def orgMap = [:]</scripting:code>
+		</scripting:execute>
+		<set-variable value="#[[]]" doc:name="Initialize Organization List" doc:id="00e1365d-7a64-4b32-bd17-d2f5b3e7567d" variableName="orgList" />
+	</sub-flow>
+	<sub-flow name="extract-environments-for-bg" doc:id="fd3f7b5e-c07c-4047-87f2-444f1d2cc867" >
+		<logger level="INFO" doc:name="Log Start Retrieve Environments for Business Group" doc:id="f0d4f2ae-f7c1-4836-9c47-a6907d140911" message='#["Retrieve Environments for BG: " ++ vars.bgId]' />
+		<http:request method="GET" doc:name="Get Environments" doc:id="a636031b-3b70-4cc2-99bb-b05a3f8d4e9b" config-ref="HTTP_Request_configuration" path="accounts/api/organizations/{businessGroupId}/environments">
+				<http:headers><![CDATA[#[output application/java
+---
+{
+	"Authorization" : vars.accessToken,
+}]]]></http:headers>
+				<http:uri-params><![CDATA[#[output application/java
+---
+{
+	"businessGroupId" : vars.bgId
+}]]]></http:uri-params>
+			</http:request>
+		<validation:is-true doc:name="Is true" doc:id="31ca73d5-216e-4a4d-a696-710d77caf16a" expression="#[attributes.statusCode == 200]" message="Non 200 response received from Anypoint while trying to get environments for the business group" />
+		<ee:transform doc:name="Extract Environments By Type" doc:id="29a98c5d-0179-4fee-accd-8b79a9b69b66">
+				<ee:message>
+				</ee:message>
+				<ee:variables>
+					<ee:set-variable variableName="extractedEnvs"><![CDATA[%dw 2.0
+output application/java
+---
+payload.data filter ($."type" == vars.inputData.data.environments) map {
+    id: $.id,
+    envName: $.name
+}]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+		<logger level="INFO" doc:name="Log End Retrieve Environments for Business Group" doc:id="249c33b3-5c54-474f-83a3-a6642bb47938" message='#["Retrieved Environments for BG: " ++ vars.bgId]' />
+	</sub-flow>
+	<sub-flow name="get-business-group-info" doc:id="0f3171c3-8f45-471f-9dc5-5ea6be068a01" >
+		<logger level="INFO" doc:name="Log Before Getting Business Groups" doc:id="98be296f-86da-40b6-8f7a-14892465ed06" message="Start retrieveing Business Groups" />
+		<choice doc:name="Include Sub Orgs?" doc:id="112eee55-4eef-418a-9765-bf0e038c596e" >
+			<when expression="#[vars.inputData.data.includeSubOrgs == true]">
+				<http:request method="GET" doc:name="Get List of Existing Sub Orgs for the Root Org" doc:id="50c28f41-49e1-4198-b5f1-eda734f2e288" config-ref="HTTP_Request_configuration" path="/accounts/api/organizations/{rootOrgID}/hierarchy" target="organizationsResponse">
+			<http:headers><![CDATA[#[output application/java
+---
+{
+	"Authorization" : vars.accessToken
+}]]]></http:headers>
+			<http:uri-params><![CDATA[#[output application/java
+---
+{
+	"rootOrgID" : vars.inputData.data.masterOrgId
+}]]]></http:uri-params>
+		</http:request>
+				<ee:transform doc:name="Retrieved Orgs" doc:id="38e634b3-b08a-4586-8b7f-df22e2dd0b98">
+			<ee:message>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="retrievedOrgs"><![CDATA[%dw 2.0
+output application/java
+---
+{
+	orgIds: (vars.organizationsResponse)..id
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Retrieved Orgs" doc:id="92ef4d76-2a29-44c1-93b1-5a5495a1e9ee" >
+					<ee:message />
+					<ee:variables >
+						<ee:set-variable variableName="retrievedOrgs" ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	orgIds: [vars.inputData.data.masterOrgId]
+}]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+			</otherwise>
+		</choice>
+		<logger level="INFO" message="Business Groups retrieved" doc:name="Log After Getting Business Groups" />
+	</sub-flow>
+</mule>

@@ -1,0 +1,76 @@
+#%RAML 1.0 Library
+usage: Input Data for RTF Calculator
+types:
+
+  Error:
+    displayName: Error Response
+    description: This is the error response that is sent to the consumer
+    type: object
+    properties: 
+      success:
+        description: Success Indicator
+        type: boolean
+        required: false
+      apiName: 
+        description: API Name
+        type: string
+        required: false
+      version: 
+        description: API Version
+        type: string
+        required: false
+      correlationId:
+        description: Cross Reference ID
+        type: string
+        required: false
+      timestamp: 
+        description: Timestamp
+        type: string
+        required: false
+      errorDetails: 
+        description: Error Details Object
+        type: object
+        required: false
+        properties:
+          httpResponseCode: 
+            description: HTTP Response Code
+            type: string
+            required: false
+          message:
+            description: Error Message
+            type: string
+            required: false
+          shortDescription: 
+            description: Short Description
+            type: string
+            required: false
+          description: 
+            description: Long Description
+            type: string
+            required: false
+          additionalInfo:
+            description: Additional Details
+            type: string
+            required: false
+
+  inputObject:
+    displayName: RTF Calculator Object
+    description: Input to RTF Core Calculator
+    type: object
+    properties:
+      masterOrgId:
+        displayName: Master Organization ID
+        description: This is the parent organization ID. You may or may not have sub orgs or business groups
+        type: string
+        required: true
+      includeSubOrgs:
+        displayName: Include Sub Orgs
+        description: Do you also want to include the sub orgs in the RTF core count calculation
+        type: boolean
+        required: true
+      environments:
+        displayName: Environment Type
+        description: Do you want to get core counts for Sandbox or Production Enviornments
+        type: string
+        enum: ["sandbox", "production"]
+        required: true

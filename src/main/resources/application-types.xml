@@ -1,0 +1,40 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<types:mule xmlns:types="http://www.mulesoft.org/schema/mule/types">
+  <types:catalog>
+    <types:type name="csv" format="csv">
+      <types:shape format="weave"><![CDATA[%dw 2.0
+
+type csv = Array<{|  Organization: String,   Environment: String,   TotalCPU: String,   "Total Memory": String|}>
+
+]]></types:shape>
+      <types:properties>
+        <types:property name="headerLineNumber" value="0"/>
+        <types:property name="header" value="true"/>
+        <types:property name="isQuotedString" value="false"/>
+      </types:properties>
+    </types:type>
+    <types:type name="json" format="json">
+      <types:shape format="weave" example="examples/response-1.json"><![CDATA[%dw 2.0
+
+type json = Array<{|  Organization: String,   Environments: Array<{|    Environment: String,     "Total CPU Used": Number {"typeId": "int"},     "Total Memory Used": Number {"typeId": "double"},     "Application Details": Array<{|      applicationName: String,       cpuUsed: Number {"typeId": "int"},       memUsed: Number {"typeId": "double"}    |}>
+  |}>
+|}> {"example": "[{\\\"Organization\\\":\\\"rahuldureja-services\\\",\\\"Environments\\\":[{\\\"Environment\\\":\\\"DEV\\\",\\\"Total CPU Used\\\":1,\\\"Total Memory Used\\\":3.6,\\\"Application Details\\\":[{\\\"applicationName\\\":\\\"rtf-test-dev\\\",\\\"cpuUsed\\\":1,\\\"memUsed\\\":3.6}]},{\\\"Environment\\\":\\\"STAGING\\\",\\\"Total CPU Used\\\":0,\\\"Total Memory Used\\\":0,\\\"Application Details\\\":[]},{\\\"Environment\\\":\\\"Test\\\",\\\"Total CPU Used\\\":0,\\\"Total Memory Used\\\":0,\\\"Application Details\\\":[]},{\\\"Environment\\\":\\\"TEST\\\",\\\"Total CPU Used\\\":0,\\\"Total Memory Used\\\":0,\\\"Application Details\\\":[]}]},{\\\"Organization\\\":\\\"deepak-services\\\",\\\"Environments\\\":[{\\\"Environment\\\":\\\"Sandbox\\\",\\\"Total CPU Used\\\":0,\\\"Total Memory Used\\\":0,\\\"Application Details\\\":[]}]},{\\\"Organization\\\":\\\"Test2\\\",\\\"Environments\\\":[{\\\"Environment\\\":\\\"Sandbox\\\",\\\"Total CPU Used\\\":0,\\\"Total Memory Used\\\":0,\\\"Application Details\\\":[]}]}]"}
+
+]]></types:shape>
+    </types:type>
+  </types:catalog>
+  <types:enrichment select="#a29f400e-36e7-4129-bd18-397e41af490c">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="json"/>
+        </types:message>
+      </types:input-event>
+      <types:output-event>
+        <types:message>
+          <types:payload type="csv"/>
+        </types:message>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+</types:mule>

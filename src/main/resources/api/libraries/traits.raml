@@ -1,0 +1,25 @@
+#%RAML 1.0 Library
+
+traits:
+  required-headers:
+    headers:
+      responseType:
+        type: string
+        description: To request the output as JSON or CSV
+        enum: ["json", "csv"]
+        required: false
+      authType:
+        type: string
+        description: Connected App or Username/Password
+        enum: ["connectedApp", "userpass"]
+    responses:
+      400:
+        description: Bad Request
+            
+  tracked:
+    headers:
+      TransRefGUID:
+        description: Transaction reference for tracking purposes
+        type: string
+        required: false
+        example: 706d67c1-cc4d-11cf-91fb-44435454000

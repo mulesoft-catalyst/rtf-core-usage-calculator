@@ -34,8 +34,8 @@ output application/java
 ---
 if (attributes.statusCode == 200) {
 	"applicationName": vars.currApp.name,
-    "cpuUsed": if (payload.application.status != "NOT_RUNNING") ((((payload.target.deploymentSettings.cpuReserved) replace "m" with "") as Number) * (payload.target.replicas as Number))/1000 else 0,
-    "memUsed": if (payload.application.status != "NOT_RUNNING") ((((payload.target.deploymentSettings.memoryReserved) replace "Mi" with "") as Number) * (payload.target.replicas as Number))/1000 else 0
+    "cpuUsed": if (payload.application.status != "NOT_RUNNING") ((((payload.target.deploymentSettings.resources.cpu.reserved) replace "m" with "") as Number) * (payload.target.replicas as Number))/1000 else 0,
+    "memUsed": if (payload.application.status != "NOT_RUNNING") ((((payload.target.deploymentSettings.resources.memory.reserved) replace "Mi" with "") as Number) * (payload.target.replicas as Number))/1000 else 0
 }
 else
 {

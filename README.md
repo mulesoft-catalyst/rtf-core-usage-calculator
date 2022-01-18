@@ -97,4 +97,4 @@ The body for this call is as follows,
 
 **includeSubOrgs**: If your parent organization has one or more sub organizations in a nested structure and you want to get the core usage count for those as well, set this value to **true**. If you need to skip those, set it to **false**
 
-**environments**: You can get a core count for either the Production or Non Production environments. If you only need to get a count of the production enviornments set this to **production**, else set it to **sandbox**
+**environments**: You can get a core count for either the Production or Non Production environments. If you only need to get a count of the production environnments set this to **production**, else set it to **sandbox**

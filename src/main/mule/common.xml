@@ -34,8 +34,8 @@ output application/java
 ---
 if (attributes.statusCode == 200) {
 	"applicationName": vars.currApp.name,
-    "cpuUsed": if (payload.application.status != "NOT_RUNNING") ((((payload.target.deploymentSettings.cpuReserved) replace "m" with "") as Number) * (payload.target.replicas as Number))/1000 else 0,
-    "memUsed": if (payload.application.status != "NOT_RUNNING") ((((payload.target.deploymentSettings.memoryReserved) replace "Mi" with "") as Number) * (payload.target.replicas as Number))/1000 else 0
+    "cpuReserved": if (payload.application.status != "NOT_RUNNING") ((((payload.target.deploymentSettings.resources.cpu.reserved) replace "m" with "") as Number) * (payload.target.replicas as Number))/1000 else 0,
+    "cpuLimit": if (payload.application.status != "NOT_RUNNING") ((((payload.target.deploymentSettings.resources.cpu.limit) replace "m" with "") as Number) * (payload.target.replicas as Number))/1000 else 0
 }
 else
 {
@@ -45,7 +45,7 @@ else
 						</ee:transform>
 	</sub-flow>
 	<sub-flow name="list-deployed-apis" doc:id="a5b221e4-c647-49ad-a0d9-332e80efe8bb" >
-		<logger level="INFO" doc:name="Log Start Extracting Used Cores for RTF Applications" doc:id="99f8a255-c450-4d4a-988e-81583b375dd6" message='#["Before extracting deployed applications for environment ID: " ++ vars.envInfo.id ++ " with name: " ++ vars.envInfo.envName]' />
+		<logger level="INFO" doc:name="Log Start Extracting Cores for RTF Applications" doc:id="99f8a255-c450-4d4a-988e-81583b375dd6" message='#["Before extracting deployed applications for environment ID: " ++ vars.envInfo.id ++ " with name: " ++ vars.envInfo.envName]' />
 		<http:request method="GET" doc:name="List Deployed APIs" doc:id="380bdc52-5b08-4cad-916f-b3c1acd2bb3a" config-ref="HTTP_Request_configuration" path="/hybrid/api/v2/organizations/{orgId}/environments/{envId}/deployments">
 					<http:headers><![CDATA[#[output application/java
 ---
@@ -72,7 +72,7 @@ payload.items filter ($.target.provider == "MC") map {
 }]]></ee:set-variable>
 					</ee:variables>
 				</ee:transform>
-		<logger level="INFO" doc:name="Log End Extracting Used Cores for RTF Applications" doc:id="aaff4a92-78f4-4166-9a9d-f324319f99a5" message='#["Extracted deployed applications for environment ID: " ++ vars.envInfo.id ++ " with name: " ++ vars.envInfo.envName]' />
+		<logger level="INFO" doc:name="Log End Extracting Cores for RTF Applications" doc:id="aaff4a92-78f4-4166-9a9d-f324319f99a5" message='#["Extracted deployed applications for environment ID: " ++ vars.envInfo.id ++ " with name: " ++ vars.envInfo.envName]' />
 	</sub-flow>
 	<sub-flow name="save-variables" doc:id="091a406e-ea23-44d4-a1ce-eda2a7163f93" >
 		<ee:transform doc:name="Save Variables" doc:id="698e34c9-3163-42b2-8f35-96528ee4d80a">
@@ -95,6 +95,8 @@ output application/java
 			<scripting:code>def orgMap = [:]</scripting:code>
 		</scripting:execute>
 		<set-variable value="#[[]]" doc:name="Initialize Organization List" doc:id="00e1365d-7a64-4b32-bd17-d2f5b3e7567d" variableName="orgList" />
+		<set-variable value="#[0]" doc:name="Global CPU Reserved" doc:id="a69d2864-6f79-4cd1-aa3b-4c9d5ae6d962" variableName="globalCPUReserved" mimeType="application/java" />
+		<set-variable value="#[0]" doc:name="Global CPU Limit" doc:id="5b9bad97-39e6-4d96-9f60-f5ebd1f5382c" variableName="globalCPULimit" mimeType="application/java" />
 	</sub-flow>
 	<sub-flow name="extract-environments-for-bg" doc:id="fd3f7b5e-c07c-4047-87f2-444f1d2cc867" >
 		<logger level="INFO" doc:name="Log Start Retrieve Environments for Business Group" doc:id="f0d4f2ae-f7c1-4836-9c47-a6907d140911" message='#["Retrieve Environments for BG: " ++ vars.bgId]' />

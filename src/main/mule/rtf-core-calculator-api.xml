@@ -241,16 +241,18 @@ output application/java
 			<foreach doc:name="For Each Environment" doc:id="bdee7570-39fe-4da9-9b0c-640ad262bfea" collection="#[vars.extractedEnvs]">
 				<set-variable value="#[payload]" doc:name="Set Environment Info" doc:id="4c8c61c8-c620-4fd1-9f60-66303f005d6e" variableName="envInfo"/>
 				<flow-ref doc:name="list-deployed-apis" doc:id="5a0788e7-c6c3-4fd4-a525-b4ed791dbe29" name="list-deployed-apis" />
-				<set-variable value="#[0]" doc:name="Init Total CPU Used" doc:id="e0d6f840-084c-4d05-8840-e01bfed38dbd" variableName="totalCPUUsed" mimeType="application/java"/>
-				<set-variable value="#[0]" doc:name="Init Total Memory Used" doc:id="75844b65-21e2-48b6-a842-c6f637368521" variableName="totalMemUsed" mimeType="application/java"/>
+				<set-variable value="#[0]" doc:name="Init Total CPU Reserved" doc:id="e0d6f840-084c-4d05-8840-e01bfed38dbd" variableName="totalCPUReserved" mimeType="application/java"/>
+				<set-variable value="#[0]" doc:name="Init Total CPU Limit" doc:id="75844b65-21e2-48b6-a842-c6f637368521" variableName="totalCPULimit" mimeType="application/java"/>
 				<foreach doc:name="For Each Extracted Application" doc:id="977d35bc-6e67-42e5-9ced-3937804ab461" collection="#[vars.filteredApps]" >
 					<set-variable value="#[payload]" doc:name="Current App" doc:id="2543df6f-a360-4646-a47c-94b973742363" variableName="currApp"/>
 					<flow-ref doc:name="list-details-for-deployment" doc:id="dd043498-44b4-4b4a-891c-17ead04d3b08" name="list-details-for-deployment" />
-					<set-variable value="#[(vars.totalCPUUsed as Number) + (vars.appDetail.cpuUsed as Number)]" doc:name="Count Total CPU" doc:id="4d796c8a-4a4c-4da7-8c90-671cab824f0a" variableName="totalCPUUsed"/>
-					<set-variable value="#[(vars.totalMemUsed as Number) + (vars.appDetail.memUsed as Number)]" doc:name="Count Total Memory" doc:id="4b991ba9-1445-47f7-87e6-065a05ee3395" variableName="totalMemUsed"/>
+					<set-variable value="#[(vars.totalCPUReserved as Number) + (vars.appDetail.cpuReserved as Number)]" doc:name="Count Total CPU Reserved" doc:id="4d796c8a-4a4c-4da7-8c90-671cab824f0a" variableName="totalCPUReserved"/>
+					<set-variable value="#[(vars.totalCPULimit as Number) + (vars.appDetail.cpuLimit as Number)]" doc:name="Count Total CPU Limit" doc:id="4b991ba9-1445-47f7-87e6-065a05ee3395" variableName="totalCPULimit"/>
 					<scripting:execute engine="groovy" doc:name="Add to Count List" doc:id="1cdbf6fb-30ac-4de4-a168-3b848acf614f" >
 						<scripting:code >vars.countList.add(vars.appDetail)</scripting:code>
 					</scripting:execute>
+					<set-variable value="#[(vars.appDetail.cpuReserved as Number) + (vars.globalCPUReserved as Number)]" doc:name="Global Increment CPU Reserved" doc:id="93c8eca1-784c-4d2c-aafc-3b83eb2645a0" variableName="globalCPUReserved" />
+					<set-variable value="#[(vars.appDetail.cpuLimit as Number) + (vars.globalCPULimit as Number)]" doc:name="Global Increment CPU Limit" doc:id="b8e0c8ea-3b45-4978-91be-319a11e3fea0" variableName="globalCPULimit" />
 				</foreach>
 				<ee:transform doc:name="Aggregated Data" doc:id="902d18d7-7543-42bd-aef0-c5578011204a" >
 					<ee:message >
@@ -262,8 +264,8 @@ output application/java
 
 	{
 		"Environment": vars.envInfo.envName,
-		"Total CPU Used": if (sizeOf(vars.filteredApps) > 0) vars.totalCPUUsed else 0,
-		"Total Memory Used": if (sizeOf(vars.filteredApps) > 0) vars.totalMemUsed else 0,
+		"Total CPU Reserved": if (sizeOf(vars.filteredApps) > 0) vars.totalCPUReserved else 0,
+		"Total CPU Limit": if (sizeOf(vars.filteredApps) > 0) vars.totalCPULimit else 0,
 		"Application Details": if (sizeOf(vars.filteredApps) > 0) vars.countList else []
 	
 	}
@@ -313,45 +315,21 @@ output application/java
 			</choice>
 			<set-variable value="#[[]]" doc:name="Clear Count List" doc:id="0159ecb4-9f3c-4efe-b593-1bfc72a262b0" variableName="countList"/>
 			<set-variable value="#[[]]" doc:name="Clear Environment List" doc:id="501534fc-fddb-482a-adf7-c00ccf7c4e52" variableName="envList" />
-			<logger level="INFO" doc:name="Log End Processing Business Groups" doc:id="1a9df4a9-a371-4954-8592-c8a2dceb2981" message='#["Processed Business Group: " ++ vars.bgId]'/>
 		</foreach>
-		<choice doc:name="Check Response Type" doc:id="f7092d04-2eba-4fea-a095-1ec0d663ade3" >
-			<when expression='#[vars.inputData.responseType == "json"]'>
-				<ee:transform doc:name="Create JSON Response" doc:id="375df877-d337-4533-b69c-a97892a8503e">
+		<logger level="INFO" doc:name="Log End Processing Business Groups" doc:id="1a9df4a9-a371-4954-8592-c8a2dceb2981" message='#["Processed Business Group: " ++ vars.bgId]' />
+		<ee:transform doc:name="Create JSON Response" doc:id="375df877-d337-4533-b69c-a97892a8503e">
 			<ee:message>
 				<ee:set-payload><![CDATA[%dw 2.0
 output application/json
 ---
-vars.orgMap]]></ee:set-payload>
+{
+	"Global Total CPU Reserved": vars.globalCPUReserved,
+	"Global Total CPU Limit": vars.globalCPULimit,
+	"Details": vars.orgMap
+}
+]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
-			</when>
-			<otherwise >
-				<ee:transform doc:name="Create Response" doc:id="87ceca57-83aa-4074-8951-470aa508e5c3" >
-					<ee:message >
-						<ee:set-payload ><![CDATA[%dw 2.0
-output application/json
----
-vars.orgList]]></ee:set-payload>
-					</ee:message>
-				</ee:transform>
-				<ee:transform doc:name="Create CSV Response" doc:id="a29f400e-36e7-4129-bd18-397e41af490c" >
-					<ee:message >
-						<ee:set-payload ><![CDATA[%dw 2.0
-output application/csv headerLineNumber = 0 , header = true
----
-payload flatMap  ((payload01, indexOfPayload01) -> (
-    payload01.Environments map (payload02, indexOfPayload02) -> {
-        Organization: payload01.Organization,
-        Environment: payload02.Environment,
-        "Total CPU Used": payload02."Total CPU Used",
-        "Total Memory Used": payload02."Total Memory Used"
-    }
-))]]></ee:set-payload>
-					</ee:message>
-				</ee:transform>
-			</otherwise>
-		</choice>
 		<logger level="INFO" doc:name="Log End" doc:id="bf64595e-a86e-4c31-a65a-099d47937b16" message="Request Completed"/>
     </flow>
 </mule>
